@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real-Time Package Tracking</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+      #map {
+        height: 400px;
+        width: 100%;
+      }
+    </style>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const socket = io();
+        const map = L.map("map").setView([6.5244, 3.3792], 13); // Initial center on Lagos
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+
+        let marker;
+
+        // Function to update marker position
+        function updateMarker(lat, lng) {
+          if (marker) {
+            marker.setLatLng([lat, lng]);
+          } else {
+            marker = L.marker([lat, lng]).addTo(map);
+          }
+          map.setView([lat, lng]);
+          console.log(`Updated Marker Position: Lat: ${lat}, Lng: ${lng}`); // Log coordinates
+        }
+
+        // Get current location
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((position) => {
+            const { latitude, longitude } = position.coords;
+            updateMarker(latitude, longitude);
+          });
+        } else {
+          alert("Geolocation is not supported by this browser.");
+        }
+
+        socket.on("locationUpdate", (data) => {
+          console.log("Location update received from server:", data); // Log received coordinates
+          const { lat, lng } = data;
+          updateMarker(lat, lng);
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Real-Time Package Tracking</h1>
+    <div id="map"></div>
+  </body>
+</html>
